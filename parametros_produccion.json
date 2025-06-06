@@ -1,0 +1,25 @@
+{
+  "cuotas": {
+    "concept_art": 0.65,         
+    "modelado": 0.85,            
+    "texturizado": 0.9,          
+    "animatic": 26,              
+    "layout": 30,                
+    "animacion": 16.8,           
+    "render": 6.5                
+  },
+  "dias_revision_cliente": 2,
+  "dias_revision_asset": 2,
+  "factor_ajuste_versiones": 2.5,
+  "artistas_minimos": {
+    "concept_art": 1,
+    "modelado": 1,
+    "texturizado": 1,
+    "personajes": 1,
+    "environments": 1,
+    "rigger": 1,
+    "animatic": 1,
+    "layout_anim": 3,
+    "render": 4
+  }
+}
