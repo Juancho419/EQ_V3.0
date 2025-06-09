@@ -49,36 +49,70 @@ def obtener_parametros_desde_gui():
     def analizar():
         try:
             nombre = nombre_entry.get().strip()
-            episodios = int(episodios_entry.get())
-            duracion = int(duracion_entry.get())
-            reuso = float(reuso_entry.get())  # porcentaje (ej: 25.5)
-            props = int(props_entry.get())
-            personajes = int(personajes_entry.get())
-            environments = int(env_entry.get())
-            usd_dia_text = usd_dia_entry.get().strip()
-            if usd_dia_text == "":
-                messagebox.showerror("Error", "El valor en USD por día no puede estar vacío.")
+            episodios = episodios_entry.get().strip()
+            duracion = duracion_entry.get().strip()
+            reuso = reuso_entry.get().strip()
+            props = props_entry.get().strip()
+            personajes = personajes_entry.get().strip()
+            environments = env_entry.get().strip()
+            usd_dia = usd_dia_entry.get().strip()
+
+            # Validación de campos vacíos
+            if not all([nombre, episodios, duracion, reuso, props, personajes, environments, usd_dia]):
+                messagebox.showerror("Error", "All fields are required.")
                 return
+            
+            # --- Preproducción (PRE) ---
+            
+            # Validación de enteros positivos (no acepta decimales ni negativos)
+            for field, value in [
+                ("Episodes", episodios),
+                ("Duration", duracion),
+                ("Re-use %", reuso),
+                ("Props", props),
+                ("Characters", personajes),
+                ("Environments", environments)
+            ]:
+                if not value.isdigit() or int(value) < 0:
+                    messagebox.showerror("Error", f"{field} must be a non-negative integer (no decimals).")
+                    return
+
+            # Validación de USD/día (puede ser decimal, pero no negativo)
             try:
-                usd_dia = float(usd_dia_text)
+                usd_dia_float = float(usd_dia)
+                if usd_dia_float < 0:
+                    messagebox.showerror("Error", "USD per day must be a non-negative number.")
+                    return
             except ValueError:
-                messagebox.showerror("Error", "El valor en USD por día debe ser un número válido, (Ej: 15 ó 22.5).")
+                messagebox.showerror("Error", "USD per day must be a number (e.g. 10 or 20.5).")
+                return
+            
+            # --- PRODUCCIÓN (PROD) ---
+            
+
+            # Validación de artistas de animatic
+            animatic_artistas = animatic_artistas_entry.get().strip()
+            if not animatic_artistas.isdigit() or int(animatic_artistas) < 1:
+                messagebox.showerror("Error", "Animatic Artists must be an integer ≥ 1.")
                 return
 
-            # Guardar en variables globales
-            global nombre_proyecto, episodios_proyecto, duracion_proyecto
-            global porcentaje_reuso, props_proyecto, personajes_proyecto, environments_proyecto, usd_dia_proyecto
-            nombre_proyecto = nombre
-            episodios_proyecto = episodios
-            duracion_proyecto = duracion
-            porcentaje_reuso = reuso
-            props_proyecto = props
-            personajes_proyecto = personajes
-            environments_proyecto = environments
-            usd_dia_proyecto = usd_dia
-            root.destroy()
+            # Validación de artistas de layout/animación
+            layout_animacion_artistas = layout_animacion_artistas_entry.get().strip()
+            if not layout_animacion_artistas.isdigit() or int(layout_animacion_artistas) < 3:
+                messagebox.showerror("Error", "Layout/Animation Artists must be an integer ≥ 3.")
+                return
+
+            # Guardar globales
+            global animatic_artistas_global, layout_animacion_artistas_global
+            animatic_artistas_global = int(animatic_artistas)
+            layout_animacion_artistas_global = int(layout_animacion_artistas)
+
+        
+            
+            
         except Exception as e:
-            messagebox.showerror("Error", f"Datos inválidos. Detalle técnico: {e}")
+            messagebox.showerror("Error", f"Technical error: {e}")
+
 
     root = tk.Tk()
     root.title("EQUALIZADOR 3D | Parámetros del Proyecto")
@@ -123,6 +157,23 @@ def obtener_parametros_desde_gui():
     usd_dia_entry = tk.Entry(root, width=10)
     usd_dia_entry.grid(row=row, column=1, padx=5, pady=5)
     row += 1
+    
+    row += 1
+    tk.Label(root, text="--- PROD ---", font=("Arial", 10, "bold")).grid(row=row, column=0, columnspan=2, pady=(15, 5))
+
+    row += 1
+    tk.Label(root, text="Number of Animatic Artists (min 1):").grid(row=row, column=0, padx=5, pady=5, sticky="w")
+    animatic_artistas_entry = tk.Entry(root, width=10)
+    animatic_artistas_entry.insert(0, "1")
+    animatic_artistas_entry.grid(row=row, column=1, padx=5, pady=5)
+
+    row += 1
+    tk.Label(root, text="Number of Layout/Animation Artists (min 3):").grid(row=row, column=0, padx=5, pady=5, sticky="w")
+    layout_animacion_artistas_entry = tk.Entry(root, width=10)
+    layout_animacion_artistas_entry.insert(0, "3")
+    layout_animacion_artistas_entry.grid(row=row, column=1, padx=5, pady=5)
+
+    #Botón de analizar
 
     analizar_btn = tk.Button(root, text="Analizar", command=analizar)
     analizar_btn.grid(row=row, column=0, columnspan=2, pady=12)
@@ -165,3 +216,34 @@ print(f"Porcentaje de reúso declarado: {porcentaje_reuso}%")
 print(f"Tiempo total estimado de arte: {resultados_arte['dias_totales_arte']:.2f} días")
 print(f"Costo total de arte: {resultados_arte['costo_total_arte']:.2f} USD")
 
+# --- PRODUCCIÓN (PROD) ---
+
+from calculos import calcular_tiempos_costos_prod
+
+resultado_prod = calcular_tiempos_costos_prod(
+    episodios_proyecto,
+    duracion_proyecto,
+    animatic_artistas_global,
+    layout_animacion_artistas_global,
+    parametros,
+    usd_dia_proyecto
+)
+
+print("\nProduction Summary (PROD):")
+print(f"Animatic: {resultados_prod['dias_animatic_por_ep']:.2f} days/episode, total {resultados_prod['dias_animatic_total']:.2f} days, cost: ${resultados_prod['costo_animatic']:.2f}")
+print(f"Layout: {resultados_prod['dias_layout_por_ep']:.2f} days/episode, total {resultados_prod['dias_layout_total']:.2f} days, cost: ${resultados_prod['costo_layout']:.2f}")
+print(f"Animation: {resultados_prod['dias_animacion_por_ep']:.2f} days/episode, total {resultados_prod['dias_animacion_total']:.2f} days, cost: ${resultados_prod['costo_animacion']:.2f}")
+
+# Resumen total de días y costos de producción
+total_prod_days = (
+    resultados_prod['dias_animatic_total'] +
+    resultados_prod['dias_layout_total'] +
+    resultados_prod['dias_animacion_total']
+)
+total_prod_cost = (
+    resultados_prod['costo_animatic'] +
+    resultados_prod['costo_layout'] +
+    resultados_prod['costo_animacion']
+)
+print(f"\nTotal production days: {total_prod_days:.2f}")
+print(f"Total production cost: ${total_prod_cost:.2f}")
